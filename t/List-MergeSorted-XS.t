@@ -3,7 +3,7 @@
 
 #########################
 
-use Test::More tests => 118;
+use Test::More tests => 130;
 use_ok('List::MergeSorted::XS');
 
 #########################
@@ -62,31 +62,30 @@ my %methods = (
 );
 
 for my $method (sort keys %methods) {
-    local $List::MergeSorted::XS::MERGE_METHOD = $methods{$method};
+    my %method = (method => $methods{$method});
 
     # test that simple use cases are handled correctly
     my @lists = ([4, 7, 9], [1, 3, 5], [2, 6, 8]);
 
-    my $merged = merge(\@lists);
+    my $merged = merge(\@lists, %method);
     is_deeply($merged, [1..9], "$method: unlimited flat"); # $sorted = [1..9]
 
-    $merged = merge(\@lists, limit => 4);
-    use Data::Dumper;
+    $merged = merge(\@lists, limit => 4, %method);
     is_deeply($merged, [1..4], "$method: limited flat");
 
     @lists = ([1, 3], [2, 4]);
-    $merged = merge(\@lists, key_cb => sub { $_[0] });
+    $merged = merge(\@lists, key_cb => sub { $_[0] }, %method);
     is_deeply($merged, [sort {$a<=>$b} map {@$_} @lists], "$method: unlimited keyed");
 
-    $merged = merge(\@lists, limit => 3, key_cb => sub { $_[0] });
+    $merged = merge(\@lists, limit => 3, key_cb => sub { $_[0] }, %method);
     is_deeply($merged, [$lists[0][0], $lists[1][0], $lists[0][1]], "$method: limited keyed");
 
     @lists = ([1, 2], [0, 2, 3], [3, 4]);
-    $merged = merge(\@lists, uniq_cb => sub { $_[0] });
+    $merged = merge(\@lists, uniq_cb => sub { $_[0] }, %method);
     is_deeply($merged, [0..4], "$method: unkeyed deduplicate");
 
     @lists = ([ [0,  99], [0, 100], [0, 100], [1, 101] ]);
-    $merged = merge(\@lists, key_cb => sub { $_[0][0] }, uniq_cb => sub { $_[0][1] });
+    $merged = merge(\@lists, key_cb => sub { $_[0][0] }, uniq_cb => sub { $_[0][1] }, %method);
     is_deeply($merged, [@{ $lists[0] }[ 0, 1, 3 ]], "$method: keyed deduplicate");
 
     # test that larger lists are handled correctly
@@ -100,10 +99,29 @@ for my $method (sort keys %methods) {
         my @expected = sort {$a <=> $b} map {@$_} @lists;
         splice @expected, $opts{limit} if defined $opts{limit} && @expected > $opts{limit};
 
-        $merged = merge(\@lists, %opts);
+        $merged = merge(\@lists, %opts, %method);
         is_deeply($merged, \@expected, "$method: random $test");
 
-        $merged = merge(\@lists, (%opts, key_cb => sub {$_[0]}));
+        $merged = merge(\@lists, %opts, key_cb => sub {$_[0]}, %method);
         is_deeply($merged, \@expected, "$method: random $test keyed");
     }
+
+    # test complex objects
+    @lists = (
+        [{ id => 100, time => 10 }, { id => 101, time => 13 }],
+        [{ id => 102, time => 11 }, { id => 103, time => 12 }],
+    );
+    $merged = merge(\@lists, uniq_cb => sub { $_[0]{id} }, key_cb => sub { $_[0]{time} }, %method);
+    is_deeply($merged, [$lists[0][0], $lists[1][0], $lists[1][1], $lists[0][1]], "$method: keyed & uniq objects");
+
+    # test that dedupe of equally-sorted elements works with component lists sorted the same
+    @lists = ([100, 101], [100, 101]);
+    $merged = merge(\@lists, uniq_cb => sub { $_[0] }, key_cb => sub { 1 }, %method);
+    is(scalar(@$merged), 2, "$method: same-keyed duplicates, same order");
+
+    # test that dedupe of equally-sorted elements works with component lists sorted differently
+    @lists = ([100, 101], [101, 100]);
+    $merged = merge(\@lists, uniq_cb => sub { $_[0] }, key_cb => sub { 1 }, %method);
+    is(scalar(@$merged), 2, "$method: same-keyed duplicates, diff order");
+
 }

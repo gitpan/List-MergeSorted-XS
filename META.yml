@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               List-MergeSorted-XS
-version:            1.04
+version:            1.05
 abstract:           Fast merger of presorted lists
 author:
     - Adam Thomason <athomason@cpan.org>

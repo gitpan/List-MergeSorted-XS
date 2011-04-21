@@ -13,7 +13,7 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(merge);
 our @EXPORT = qw();
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 require XSLoader;
 XSLoader::load('List::MergeSorted::XS', $VERSION);
@@ -181,12 +181,11 @@ sub _merge_sort_keyed_dedupe {
         @$lists;
 
     my @output;
-    my $last_unique = undef;
+    my %seen;
     for my $element (@merged) {
         my $unique = $uniquer->($element);
-        next if defined $last_unique && $unique == $last_unique;
+        next if $seen{$unique}++;
         push @output, $element;
-        $last_unique = $unique;
     }
 
     splice @output, $limit if $limit && @output > $limit;
@@ -342,13 +341,17 @@ callback can be provided.
 
 * Allow modification of the heuristics (perhaps based on local benchmarks).
 
+=head1 SEE ALSO
+
+John-Mark Gurney's Fibonacci heap library L<fib|http://resnet.uoregon.edu/~gurney_j/jmpc/fib.html>
+
 =head1 AUTHOR
 
 Adam Thomason, E<lt>athomason@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by Say Media Inc <cpan@saymedia.com>
+Copyright (C) 2011 by Say Media Inc <cpan@saymedia.com>
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.9 or,
