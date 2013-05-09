@@ -19,3 +19,4 @@ ppport.h
 prio.c
 prio.h
 t/List-MergeSorted-XS.t
+META.json                                Module JSON meta-data (added by MakeMaker)

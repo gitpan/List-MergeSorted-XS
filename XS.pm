@@ -13,7 +13,7 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(merge);
 our @EXPORT = qw();
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
 require XSLoader;
 XSLoader::load('List::MergeSorted::XS', $VERSION);
@@ -221,7 +221,7 @@ List::MergeSorted::XS - Fast merger of presorted lists
             [
               [2 => bless {}, 'C'], [4 => 5]
             ]);
-  $sorted = merge(\@lists, key => sub { $_[0][0] });
+  $sorted = merge(\@lists, key_cb => sub { $_[0][0] });
 
 =head1 DESCRIPTION
 
@@ -281,7 +281,7 @@ If no uniq_cb is passed, duplicates are allowed in the output.
 
 =item * method
 
-Specifies the algorithm to use to merge the lists. Is provided, the value must
+Specifies the algorithm to use to merge the lists. If provided, the value must
 be one of the constants listed below under L<ALGORITHM>.
 
 If no B<method> is given, one is chosen automatically based upon the input
